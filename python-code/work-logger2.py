@@ -11,11 +11,6 @@ scope = ['https://spreadsheets.google.com/feeds',
 #http://gspread.readthedocs.io/en/latest/oauth2.html
 credentials = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
 
-
-gc = gspread.authorize(credentials)
-
-wks = gc.open("gdrive-worklog").sheet1
-
 def writeLogEntry(btn):
 	timeStamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 	try:
@@ -24,7 +19,10 @@ def writeLogEntry(btn):
 		with open("/home/pi/Dokumente/work-logger/workLog.csv", "a") as file:
 			writer = csv.writer(file, quoting=csv.QUOTE_ALL)
 			writer.writerow(entry)
-			wks.append_row(entry)
+
+        gc = gspread.authorize(credentials)
+        wks = gc.open("gdrive-worklog").sheet1
+        wks.append_row(entry)
 
 	except:
 		print("no task defined")
@@ -146,4 +144,3 @@ while True:
 		switchOffAllLed()
 		GPIO.output(11, GPIO.HIGH)
 		time.sleep(0.2)
-
