@@ -1,0 +1,81 @@
+---
+title: "Auswertung"
+output:
+  html_document: default
+---
+[workLog.csv](workLog.csv) | [workLogClean.csv](workLogClean.csv)
+
+## Dauer nach Arbeit
+
+```{r message = FALSE, echo = FALSE}
+library(knitr)
+library(anytime)
+library(dplyr)
+library(ggplot2)
+
+# function for calculating duration
+calculateDuration <- function(startTime, endTime) {
+ dur <- as.numeric(difftime(endTime, startTime, units = "mins"))
+ minuten <- ifelse(dur > 640, 0, dur)
+ duration <- round(minuten/60, 2)
+}
+
+#--------- start of logic -------------------------
+
+data.raw <- read.csv("workLog.csv", header = FALSE)
+data <- data.raw
+data$V1 <- anytime(data$V1) #convert data from factor into timestamp
+
+# add month and day and time cols
+data <- data %>% mutate(Monat = format(V1, "%m")) %>%
+mutate(Tag = format(V1, "%d"))
+
+# calculate duration: time from next row (lead) minus time from current row. Times bigger than 640 mins are considered a change of day
+# i.e. are not calculated as working time
+data <- data %>% mutate(duration = calculateDuration(V1, lead(V1)))
+
+# some long button clicks can cause double entries. Remove them by filtering duration = 0 values
+data <- data %>% filter(duration > 0)
+
+# add meaningfull colnames
+colnames(data) <- c("DateTime", "Work", "Monat", "Tag", "Dauer")
+
+# store as csv for export to excel
+write.csv(data, "../work-logger/workLogClean.csv", row.names = FALSE)
+
+# group by work
+data_by_workday <- data %>% group_by(Monat, Tag, Work) %>%
+ summarize(sum(Dauer))
+
+colnames(data_by_workday) <- c("Monat", "Tag", "Work", "Dauer")
+
+# Barplot mit Anteilen der letzten 100 Eintraege
+data_by_work <- tail(data_by_workday, 100) %>% 
+  group_by(Work) %>%
+  summarize(sum(Dauer))
+colnames(data_by_work) <- c("Work", "Dauer")
+
+
+anteil <- data_by_work$Dauer / sum(data_by_work$Dauer)
+bp <- barplot(anteil, horiz = TRUE, xlab = "Arbeiten",
+      main = "Anteil pro Arbeitstyp in den letzten 100 Eintraegen",
+      border = NA,
+      col = "steelblue")
+text(x = 0, y = bp, labels = paste0(data_by_work$Work), pos = 4)
+
+# Tabelle mit den Arbeitszeiten der einzelnen Tage
+kable(data_by_workday)
+
+
+```
+
+## Stunden pro Tag
+```{r message = FALSE, echo = FALSE}
+hours_by_work_day <- data_by_workday %>% 
+  filter(Work != "Pause") %>% 
+  group_by(Monat, Tag) %>%
+  summarize(sum(Dauer))
+
+kable(hours_by_work_day)
+```
+
