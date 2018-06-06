@@ -20,9 +20,9 @@ def writeLogEntry(btn):
 			writer = csv.writer(file, quoting=csv.QUOTE_ALL)
 			writer.writerow(entry)
 
-        gc = gspread.authorize(credentials)
-        wks = gc.open("gdrive-worklog").sheet1
-        wks.append_row(entry)
+        	gc = gspread.authorize(credentials)
+        	wks = gc.open("gdrive-worklog").sheet1
+        	wks.append_row(entry)
 
 	except:
 		print("no task defined")
