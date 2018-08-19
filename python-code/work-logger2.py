@@ -11,6 +11,8 @@ scope = ['https://spreadsheets.google.com/feeds',
 #http://gspread.readthedocs.io/en/latest/oauth2.html
 credentials = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
 
+#-------------- my functions -----------------------------------------------------------
+
 def writeLogEntry(btn):
 	timeStamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 	try:
@@ -46,6 +48,22 @@ def switchOffAllLed():
         GPIO.output(9, GPIO.LOW)
         GPIO.output(11, GPIO.LOW)
 
+def blinkLed():
+	for x in range(0, 3):
+        	GPIO.output(2, GPIO.HIGH)
+        	time.sleep(0.5)
+        	GPIO.output(2, GPIO.LOW)
+        	time.sleep(0.5)
+	
+
+def shutdownRaspy():
+	switchOffAllLed()
+	blinkLed()
+	from subprocess import call
+	call("sudo shutdown --poweroff")
+
+
+#---------------  initializing variables, setting up pins ---------------------------------
 tasks = []
 readTasksFromFile()
 
@@ -60,7 +78,7 @@ GPIO.setup(7, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(1, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(12, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(16, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
+GPIO.setup(21, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 GPIO.setup(2, GPIO.OUT) #led btn1
 GPIO.setup(3, GPIO.OUT) #led btn2
@@ -79,7 +97,7 @@ for x in range(0, 3):
         GPIO.output(2, GPIO.LOW)
         time.sleep(0.5)
 
-# start control loop
+# -------------- start control loop ----------------------------------------
 while True:
 	btn1 = GPIO.input(18)
 	btn2 = GPIO.input(23)
@@ -90,6 +108,7 @@ while True:
 	btn7 = GPIO.input(1)
 	btn8 = GPIO.input(12)
 	btn9 = GPIO.input(16)
+	btn10 = GPIO.input(21)
 
 	if btn1 == False: # false means: button pressed
 		writeLogEntry(0)
@@ -144,3 +163,7 @@ while True:
 		switchOffAllLed()
 		GPIO.output(11, GPIO.HIGH)
 		time.sleep(0.2)
+
+	if btn10 == False: # false means: button pressed
+		shutdownRaspy()
+		
